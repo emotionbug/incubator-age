@@ -1,23 +1,26 @@
 language: c
 os: linux
-dist: bionic
+dist: focal
 arch: amd64
 jobs:
   include:
-  - name: PostgreSQL 11
-    compiler: gcc
-    addons:
-      apt:
-        packages:
-        - postgresql-11
-        - postgresql-server-dev-11
-    script:
-    - sudo make install
-    - make installcheck
-    after_failure: cat regress/regression.diffs
-  - name: documentation
-    language: python
-    install:
-    - pip install sphinx sphinx_rtd_theme
-    before_script: cd doc
-    script: make html
+    - name: PostgreSQL 11
+      compiler: gcc
+      install:
+        - sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+        - wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+        - sudo apt-get remove -y postgresql* > /dev/null
+        - sudo apt-get update > /dev/null
+        - sudo apt-get install -y postgresql-11 postgresql-server-dev-11 > /dev/null
+      cache:
+        apt: true
+      script:
+        - sudo make install -j$(nproc) > /dev/null
+        - make installcheck
+      after_failure: cat regress/regression.diffs
+    - name: documentation
+      language: python
+      install:
+        - pip install sphinx sphinx_rtd_theme
+      before_script: cd doc
+      script: make html
